@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RedMango_API.Data;
@@ -25,7 +26,8 @@ namespace RedMango_API.Controllers
             _response = new ApiResponse();
 
         }
-
+        
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> GetOrders(string? userId)
         {
@@ -57,11 +59,11 @@ namespace RedMango_API.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<ApiResponse>> GetOrders(int orderId)
+        public async Task<ActionResult<ApiResponse>> GetOrders(int id)
         {
             try
             {
-                if (orderId == 0)
+                if (id == 0)
                 {
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     _response.ErrorMessages.Add("OrderId not found" );
@@ -71,7 +73,7 @@ namespace RedMango_API.Controllers
 
                 var orderHeaders = _db.OrderHeaders.Include(u => u.OrderDetails)
                     .ThenInclude(u => u.MenuItem)
-                    .Where(u => u.OrderHeaderId == orderId);
+                    .Where(u => u.OrderHeaderId == id);
                 if (orderHeaders == null)
                 {
                     _response.StatusCode = HttpStatusCode.NotFound;

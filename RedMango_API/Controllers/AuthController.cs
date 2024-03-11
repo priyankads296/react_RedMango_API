@@ -59,7 +59,12 @@ namespace RedMango_API.Controllers
                 NormalizedEmail = model.UserName.ToUpper(),
                 Name = model.Name
             };
-            var result = await _userManager.CreateAsync(newUser, model.Password);
+
+            ////hashing the password
+            //string hashedPassword = HashPassword(model.Password);
+            newUser.PasswordHash = model.Password;
+
+            var result = await _userManager.CreateAsync(newUser);
             try
             {
                 if (result.Succeeded)
@@ -96,19 +101,40 @@ namespace RedMango_API.Controllers
 
         }
 
+        private string HashPassword(string password)
+        {
+            var passwordHasher = new PasswordHasher<ApplicationUser>();
+            return passwordHasher.HashPassword(null, password);
+        }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto model)
         {
             ApplicationUser userFromDb = _db.ApplicationUsers.FirstOrDefault(u => u.UserName.ToLower() == model.Username.ToLower());
             //check if password is same
-            bool isValid = await _userManager.CheckPasswordAsync(userFromDb, model.Password);
-            if (isValid==false)
+            //bool isValid = await _userManager.CheckPasswordAsync(userFromDb, model.Password);
+            //if (isValid==false)
+            //{
+            //    _response.StatusCode = HttpStatusCode.BadRequest;
+            //    _response.IsSuccess = false;
+            //    _response.ErrorMessages.Add("Username or Password is incorrect!");
+            //    return BadRequest(_response);
+
+            //}
+            if(userFromDb==null)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("Username not found!");
+                return BadRequest(_response);
+            }
+
+            if(userFromDb.PasswordHash!=model.Password)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.IsSuccess = false;
                 _response.ErrorMessages.Add("Username or Password is incorrect!");
                 return BadRequest(_response);
-
             }
 
             //if password and username is same,we have to generate JWT Token
